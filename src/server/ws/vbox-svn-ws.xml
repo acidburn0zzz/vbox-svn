@@ -1,0 +1,15 @@
+<module>
+	<id>vbox-svn-ws</id>
+	<path>vbox-svn-ws</path>
+	<name>Virtualbox SVN Trunk WebService Connector</name>
+	<desc>This module provides the WebServices connector for VirtualBox SVN Trunk r57718</desc>
+	<version>0.1.0</version>
+	<vendor>Kamax.io</vendor>
+	<url>http://kamax.io/hbox/</url>
+	<providers>
+		<provider>
+			<type>io.kamax.hboxd.hypervisor._Hypervisor</type>
+			<impl>io.kamax.vboxsvn.VBoxWebServicesHypervisor</impl>
+		</provider>
+	</providers>
+</module>

@@ -1,0 +1,276 @@
+﻿<!--
+ * 
+ * Hyperbox - Virtual Infrastructure Manager
+ * Copyright (C) 2015 Maxime Dor
+ * 
+ * http://kamax.io/hbox/
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *  
+-->
+
+<project name="VirtualBox svn - Hypervisor Modules" default="dist">
+	
+	<property file="build.properties" />
+	
+	<property name="vbox.common.base.dir"												location="../vbox-common" />
+	
+	<include file="${vbox.common.base.dir}/build.xml" as="vbox.common" />
+	
+	<property name="vbox.svn.base.dir"											location="." />
+	<condition property="vbox.svn.out.dir" value="${hbox.out.dir}">
+			<isset property="hbox.out.dir" />
+	</condition>
+	<property name="vbox.svn.out.dir"											location="${vbox.svn.base.dir}/${out.dirname}" />
+	<property name="vbox.svn.out.build.dir"										location="${vbox.svn.out.dir}/${build.dirname}" />
+	<property name="vbox.svn.out.build.class.dir"								location="${vbox.svn.out.build.dir}/${class.dirname}" />
+	<property name="vbox.svn.out.build.jar.dir"									location="${vbox.svn.out.build.dir}/${jar.dirname}" />
+	
+	<property name="vbox.svn.out.bin.dir"										location="${vbox.svn.out.dir}/${bin.dirname}" />
+	
+	<property name="vbox.svn.out.dist.dir"										location="${vbox.svn.out.dir}/${dist.dirname}" />
+	
+	<target name="clean">
+		<delete dir="${vbox.svn.out.dir}"/>
+	</target>
+	
+	<target name="configure">
+		<exec executable="git" dir="${vbox.svn.base.dir}" outputProperty="version">
+			<arg line="describe --always"/>
+		</exec>
+	</target>
+	
+	<!-- Client - GUI ========================================================================================================================================================================================= -->
+	
+	<property name="vbox.svn.client.gui.conn.id"								value="${vbox.name}.svn.${gui.name}" />
+	<property name="vbox.svn.client.gui.id"										value="${client.name}-${vbox.svn.client.gui.conn.id}" />
+	<property name="vbox.svn.client.gui.jar.filename"							value="${vbox.svn.client.gui.id}.jar" />
+	<property name="vbox.svn.client.gui.dist.zip.filename"						value="${vbox.svn.client.gui.id}.zip" />
+	
+	<property name="vbox.svn.client.gui.dir"									location="${vbox.svn.base.dir}/${src.dirname}/${client.name}/${gui.name}" />
+	<property name="vbox.svn.client.gui.src.dir"								location="${vbox.svn.client.gui.dir}/${src.dirname}" />
+	<property name="vbox.svn.client.gui.lib.dir"								location="${vbox.svn.client.gui.dir}/${lib.dirname}" />
+	<property name="vbox.svn.client.gui.class.dir"								location="${vbox.svn.out.build.class.dir}/${vbox.svn.client.gui.id}" />
+	<property name="vbox.svn.client.gui.jar.file"								location="${vbox.svn.out.build.jar.dir}/${vbox.svn.client.gui.jar.filename}" />
+	<property name="vbox.svn.client.gui.dist.zip.file"							location="${vbox.svn.out.dist.dir}/${vbox.svn.client.gui.dist.zip.filename}" />
+	
+	<path id="vbox.svn.client.gui.classpath">
+		<pathelement location="${vbox.svn.client.gui.lib.dir}" />
+		<fileset dir="${vbox.svn.client.gui.lib.dir}" includes="**/*.jar"/>
+		<path refid="vbox.client.gui.classpath" />
+	</path>
+	
+	<target name="client.gui.compile">
+		<mkdir dir="${vbox.svn.client.gui.class.dir}" />
+		<javac source="1.6" target="1.6" debug="on" includeantruntime="false" srcdir="${vbox.svn.client.gui.src.dir}" destdir="${vbox.svn.client.gui.class.dir}" classpathref="vbox.svn.client.gui.classpath" />
+	</target>
+	
+	<target name="client.gui.build" depends="client.gui.compile">
+		<jar destfile="${vbox.svn.client.gui.jar.file}">
+			<fileset dir="${vbox.svn.client.gui.class.dir}" />
+		</jar>
+	</target>
+	
+	<target name="client.gui.deploy" depends="client.gui.build">
+		<condition property="vbox.svn.client.gui.bin.dir" value="${hbox.client.module.deploy.dir}">
+			<isset property="hbox.client.module.deploy.dir" />
+		</condition>
+		<property name="vbox.svn.client.gui.bin.dir"								location="${vbox.svn.out.bin.dir}/${client.name}" />
+		<property name="vbox.svn.client.gui.bin.pkg.dir"							location="${vbox.svn.client.gui.bin.dir}/${vbox.svn.client.gui.conn.id}" />
+		<property name="vbox.svn.client.gui.bin.jar.file"							location="${vbox.svn.client.gui.bin.pkg.dir}/${vbox.svn.client.gui.jar.filename}" />
+		
+		<mkdir dir="${vbox.svn.client.gui.bin.pkg.dir}" />
+		<copy file="${vbox.svn.client.gui.jar.file}" todir="${vbox.svn.client.gui.bin.pkg.dir}" />
+		<copy file="${vbox.client.gui.jar.file}" todir="${vbox.svn.client.gui.bin.pkg.dir}" />
+		<copy file="${vbox.client.api.jar.file}" todir="${vbox.svn.client.gui.bin.pkg.dir}" />
+		<copy file="${vbox.api.jar.file}" todir="${vbox.svn.client.gui.bin.pkg.dir}" />
+
+		<copy todir="${vbox.svn.client.gui.bin.pkg.dir}" flatten="true">
+			<fileset dir="${vbox.svn.client.gui.lib.dir}" includes="**/*.jar" />
+			<fileset dir="${vbox.client.api.lib.dir}" includes="**/*.jar" />
+			<fileset dir="${vbox.api.lib.dir}" includes="**/*.jar" />
+		</copy>
+	</target>
+	
+	<target name="client.gui.dist" depends="client.gui.deploy">
+		<mkdir dir="${vbox.svn.out.dist.dir}" />
+		<zip destfile="${vbox.svn.client.gui.dist.zip.file}">
+			<fileset dir="${vbox.svn.client.gui.bin.pkg.dir}" />
+		</zip>
+	</target>
+	
+	<!-- ====================================================================================================================================================================================================== -->
+	
+	<!-- Server - Core ======================================================================================================================================================================================== -->
+	
+	<property name="vbox.svn.server.hyp.type"									value="${vbox.name}" />
+	<property name="vbox.svn.server.hyp.api"									value="svn" />
+	<property name="vbox.svn.server.hyp.conn"									value="${core.name}" />
+	<property name="vbox.svn.server.hyp.id"										value="${vbox.svn.server.hyp.type}-${vbox.svn.server.hyp.api}" />
+	<property name="vbox.svn.server.id"											value="${server.name}-${vbox.svn.server.hyp.id}-${vbox.svn.server.hyp.conn}" />
+	
+	<property name="vbox.svn.server.dir"										location="${vbox.svn.base.dir}/${src.dirname}/${server.name}/${vbox.svn.server.hyp.conn}" />
+	<property name="vbox.svn.server.src.dir"									location="${vbox.svn.server.dir}/${src.dirname}" />
+	<property name="vbox.svn.server.lib.dir"									location="${vbox.svn.server.dir}/${lib.dirname}" />
+	
+	<path id="vbox.svn.server.classpath">
+		<fileset dir="${vbox.svn.server.lib.dir}" includes="**/*.jar"/>
+		<path refid="vbox.server.api.classpath" />
+		<path refid="vbox.api.classpath" />
+	</path>
+	
+	<extension-point name="server.compile" depends="configure" />
+	
+	<extension-point  name="server.build" depends="server.compile" />
+	
+	<target name="server.dist">
+		<mkdir dir="${vbox.svn.out.dist.dir}" />
+	</target>
+	
+	<!-- ====================================================================================================================================================================================================== -->
+	
+	
+	<!-- Server - Web Services ================================================================================================================================================================================ -->
+	
+	<property name="vbox.svn.server.ws.type"							 		value="ws" />
+	<property name="vbox.svn.server.ws.conn.id"									value="${vbox.svn.server.hyp.id}-${vbox.svn.server.ws.type}" />
+	<property name="vbox.svn.server.ws.id"										value="${server.name}-${vbox.svn.server.hyp.id}-${vbox.svn.server.ws.type}" />
+	<property name="vbox.svn.server.ws.desc.filename"							value="${vbox.svn.server.ws.conn.id}.xml" />
+	<property name="vbox.svn.server.ws.jar.filename"							value="${vbox.svn.server.ws.id}.jar" />
+	<property name="vbox.svn.server.ws.dist.zip.filename"						value="${vbox.svn.server.ws.id}.zip" />
+	
+	<property name="vbox.svn.server.ws.dir"										location="${vbox.svn.base.dir}/${src.dirname}/${server.name}/${vbox.svn.server.ws.type}" />
+	<property name="vbox.svn.server.ws.src.dir"									location="${vbox.svn.server.ws.dir}/${src.dirname}" />
+	<property name="vbox.svn.server.ws.src.desc.file"							location="${vbox.svn.server.ws.dir}/${vbox.svn.server.ws.desc.filename}" />
+	<property name="vbox.svn.server.ws.lib.dir"									location="${vbox.svn.server.ws.dir}/${lib.dirname}" />
+	<property name="vbox.svn.server.ws.class.dir"								location="${vbox.svn.out.build.class.dir}/${vbox.svn.server.ws.id}" />
+	<property name="vbox.svn.server.ws.jar.file"								location="${vbox.svn.out.build.jar.dir}/${vbox.svn.server.ws.jar.filename}" />
+	<property name="vbox.svn.server.ws.dist.zip.file"							location="${vbox.svn.out.dist.dir}/${vbox.svn.server.ws.dist.zip.filename}" />
+	
+	
+	<path id="vbox.svn.server.ws.classpath">
+		<fileset dir="${vbox.svn.server.ws.lib.dir}" includes="**/*.jar"/>
+		<path refid="vbox.svn.server.classpath"/>
+	</path>
+	
+	<target name="server.ws.compile" depends="server.build">
+		<mkdir dir="${vbox.svn.server.ws.class.dir}" />
+		<javac source="1.6" target="1.6" debug="on" includeantruntime="false" srcdir="${vbox.svn.server.src.dir}" destdir="${vbox.svn.server.ws.class.dir}" classpathref="vbox.svn.server.ws.classpath" />
+		<javac source="1.6" target="1.6" debug="on" includeantruntime="false" srcdir="${vbox.svn.server.ws.src.dir}" destdir="${vbox.svn.server.ws.class.dir}" classpathref="vbox.svn.server.ws.classpath" />
+	</target>
+	
+	<target name="server.ws.build" depends="server.ws.compile">
+		<jar destfile="${vbox.svn.server.ws.jar.file}">
+			<fileset dir="${vbox.svn.server.ws.class.dir}" />
+		</jar>
+	</target>
+	
+	<target name="server.ws.deploy" depends="server.ws.build">
+		<condition property="vbox.svn.server.ws.bin.dir" value="${hbox.server.module.deploy.dir}">
+			<isset property="hbox.server.module.deploy.dir" />
+		</condition>
+		<property name="vbox.svn.server.ws.bin.dir"									location="${vbox.svn.out.bin.dir}/${server.name}/${vbox.svn.server.ws.type}" />
+		<property name="vbox.svn.server.ws.bin.desc.file"							location="${vbox.svn.server.ws.bin.dir}/${vbox.svn.server.ws.desc.filename}" />
+		<property name="vbox.svn.server.ws.bin.pkg.dir"								location="${vbox.svn.server.ws.bin.dir}/${vbox.svn.server.ws.conn.id}" />
+		<property name="vbox.svn.server.ws.bin.jar.file"							location="${vbox.svn.server.ws.bin.pkg.dir}/${vbox.svn.server.ws.jar.filename}" />
+	
+		<mkdir dir="${vbox.svn.server.ws.bin.pkg.dir}" />
+		<copy file="${vbox.svn.server.ws.src.desc.file}" tofile="${vbox.svn.server.ws.bin.desc.file}" />
+		<copy file="${vbox.api.jar.file}" todir="${vbox.svn.server.ws.bin.pkg.dir}" />
+		<copy file="${vbox.server.api.jar.file}" todir="${vbox.svn.server.ws.bin.pkg.dir}" />
+		<copy file="${vbox.svn.server.ws.jar.file}" tofile="${vbox.svn.server.ws.bin.jar.file}" />
+		<copy todir="${vbox.svn.server.ws.bin.pkg.dir}" flatten="true">
+			<fileset dir="${vbox.svn.server.ws.lib.dir}" includes="**/*.jar" />
+		</copy>
+	</target>
+	
+	<target name="server.ws.dist" depends="server.ws.deploy, server.dist">
+		<zip destfile="${vbox.svn.server.ws.dist.zip.file}">
+			<fileset dir="${vbox.svn.server.ws.bin.dir}" />
+		</zip>
+	</target>
+	
+	<!-- ====================================================================================================================================================================================================== -->
+	
+	
+	<!-- Server - XPCOM ======================================================================================================================================================================================= -->
+	
+	<property name="vbox.svn.server.xpcom.type"									value="xpcom" />
+	<property name="vbox.svn.server.xpcom.conn.id"								value="${vbox.svn.server.hyp.id}-${vbox.svn.server.xpcom.type}" />
+	<property name="vbox.svn.server.xpcom.id"									value="${server.name}-${vbox.svn.server.hyp.id}-${vbox.svn.server.xpcom.type}" />
+	<property name="vbox.svn.server.xpcom.desc.filename"						value="${vbox.svn.server.xpcom.conn.id}.xml" />
+	<property name="vbox.svn.server.xpcom.dist.zip.filename"					value="${vbox.svn.server.xpcom.id}.zip" />
+	<property name="vbox.svn.server.xpcom.jar.filename"							value="${vbox.svn.server.xpcom.id}.jar" />
+	
+	<property name="vbox.svn.server.xpcom.dir"									location="${vbox.svn.base.dir}/${src.dirname}/${server.name}/${vbox.svn.server.xpcom.type}" />
+	<property name="vbox.svn.server.xpcom.src.dir"								location="${vbox.svn.server.xpcom.dir}/${src.dirname}" />
+	<property name="vbox.svn.server.xpcom.src.desc.file"						location="${vbox.svn.server.xpcom.dir}/${vbox.svn.server.xpcom.desc.filename}" />
+	<property name="vbox.svn.server.xpcom.lib.dir"								location="${vbox.svn.server.xpcom.dir}/${lib.dirname}" />
+	<property name="vbox.svn.server.xpcom.class.dir"							location="${vbox.svn.out.build.class.dir}/${vbox.svn.server.xpcom.id}" />
+	<property name="vbox.svn.server.xpcom.jar.file"								location="${vbox.svn.out.build.jar.dir}/${vbox.svn.server.xpcom.jar.filename}" />
+	<property name="vbox.svn.server.xpcom.dist.zip.file"						location="${vbox.svn.out.dist.dir}/${vbox.svn.server.xpcom.dist.zip.filename}" />
+	
+	<path id="vbox.svn.server.xpcom.classpath">
+		<fileset dir="${vbox.svn.server.xpcom.lib.dir}" includes="**/*.jar"/>
+		<path refid="vbox.svn.server.classpath"/>
+	</path>
+	
+	<target name="server.xpcom.compile" depends="server.build">
+		<mkdir dir="${vbox.svn.server.xpcom.class.dir}" />
+		<javac source="1.6" target="1.6" debug="on" includeantruntime="false" srcdir="${vbox.svn.server.src.dir}" destdir="${vbox.svn.server.xpcom.class.dir}" classpathref="vbox.svn.server.xpcom.classpath" />
+		<javac source="1.6" target="1.6" debug="on" includeantruntime="false" srcdir="${vbox.svn.server.xpcom.src.dir}" destdir="${vbox.svn.server.xpcom.class.dir}" classpathref="vbox.svn.server.xpcom.classpath" />
+	</target>
+	
+	<target name="server.xpcom.build" depends="server.xpcom.compile">
+		<jar destfile="${vbox.svn.server.xpcom.jar.file}">
+			<fileset dir="${vbox.svn.server.xpcom.class.dir}" />
+		</jar>
+	</target>
+	
+	<target name="server.xpcom.deploy" depends="server.xpcom.build">
+		<condition property="vbox.svn.server.xpcom.bin.dir" value="${hbox.server.module.deploy.dir}">
+			<isset property="hbox.server.module.deploy.dir" />
+		</condition>
+		<property name="vbox.svn.server.xpcom.bin.dir"								location="${vbox.svn.out.bin.dir}/${server.name}/${vbox.svn.server.xpcom.type}" />
+		<property name="vbox.svn.server.xpcom.bin.desc.file"						location="${vbox.svn.server.xpcom.bin.dir}/${vbox.svn.server.xpcom.desc.filename}" />
+		<property name="vbox.svn.server.xpcom.bin.pkg.dir"							location="${vbox.svn.server.xpcom.bin.dir}/${vbox.svn.server.xpcom.conn.id}" />
+		<property name="vbox.svn.server.xpcom.bin.jar.file"							location="${vbox.svn.server.xpcom.bin.pkg.dir}/${vbox.svn.server.xpcom.jar.filename}" />
+
+		<mkdir dir="${vbox.svn.server.xpcom.bin.pkg.dir}" />
+		<copy file="${vbox.svn.server.xpcom.src.desc.file}" tofile="${vbox.svn.server.xpcom.bin.desc.file}" />
+		<copy file="${vbox.api.jar.file}" todir="${vbox.svn.server.xpcom.bin.pkg.dir}" />
+		<copy file="${vbox.server.api.jar.file}" todir="${vbox.svn.server.xpcom.bin.pkg.dir}" />
+		<copy file="${vbox.svn.server.xpcom.jar.file}" tofile="${vbox.svn.server.xpcom.bin.jar.file}" />
+		<copy todir="${vbox.svn.server.xpcom.bin.pkg.dir}" flatten="true">
+			<fileset dir="${vbox.svn.server.xpcom.lib.dir}" includes="**/*.jar" />
+		</copy>
+	</target>
+	
+	<target name="server.xpcom.dist" depends="server.xpcom.deploy, server.dist">
+		<zip destfile="${vbox.svn.server.xpcom.dist.zip.file}">
+			<fileset dir="${vbox.svn.server.xpcom.bin.dir}" />
+		</zip>
+	</target>
+	
+	<!-- ====================================================================================================================================================================================================== -->
+	
+	<extension-point name="compile" depends="client.gui.compile, server.ws.compile, server.xpcom.compile" />
+	
+	<extension-point name="build" depends="compile, client.gui.build, server.ws.build, server.xpcom.build" />
+	
+	<extension-point name="deploy" depends="build, client.gui.deploy, server.ws.deploy, server.xpcom.deploy" />
+	
+	<extension-point name="dist" depends="deploy, client.gui.dist, server.ws.dist, server.xpcom.dist" />
+
+</project>

@@ -1,0 +1,15 @@
+<module>
+	<id>vbox-svn-xpcom</id>
+	<path>vbox-svn-xpcom</path>
+	<name>Virtualbox SVN Trunk XPCOM Connector</name>
+	<desc>This module provides the XPCOM connector for VirtualBox SVN Trunk r57718</desc>
+	<version>0.1.0</version>
+	<vendor>Kamax.io</vendor>
+	<url>http://kamax.io/hbox/</url>
+	<providers>
+		<provider>
+			<type>io.kamax.hboxd.hypervisor._Hypervisor</type>
+			<impl>io.kamax.vboxsvn.VBoxXpcomHypervisor</impl>
+		</provider>
+	</providers>
+</module>
